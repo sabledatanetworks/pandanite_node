@@ -17,7 +17,7 @@ class HostManager {
         string computeAddress();
         void refreshHostList();
         void startPingingPeers();
-        int getBlockHeightFromPeer(const string& host) const;
+        //int getBlockHeightFromPeer(const string& host) const;
         string getGoodHost() const;
         uint64_t getBlockCount() const;
         Bigint getTotalWork() const;

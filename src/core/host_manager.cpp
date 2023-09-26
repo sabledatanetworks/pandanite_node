@@ -11,7 +11,6 @@
 #include <mutex>
 #include <future>
 #include <cstdio>
-#include <curl/curl.h>
 using namespace std;
 
 #define ADD_PEER_BRANCH_FACTOR 10
@@ -220,36 +219,20 @@ uint64_t HostManager::getNetworkTimestamp() const{
     Asks nodes for their current POW and chooses the best peer
 */
 
-string HostManager::getGoodHost() const {
+string HostManager::getGoodHost() const{
     if (this->currPeers.size() < 1) return "";
-
-    vector<pair<string, int64_t>> hostHeights;
+    Bigint bestWork = 0;
+    string bestHost = this->currPeers[0]->getHost();
     std::unique_lock<std::mutex> ul(lock);
-
     for(auto h : this->currPeers) {
-        try {
-            int64_t blockHeight = getBlockHeightFromPeer(h->getHost());
-            hostHeights.push_back({h->getHost(), blockHeight});
-        } catch (...) {
-            // Log the error, and continue to the next peer.
-            Logger::logStatus("Error fetching block height from: " + h->getHost());
-            continue;
+        if (h->getTotalWork() > bestWork) {
+            bestWork = h->getTotalWork();
+            bestHost = h->getHost();
         }
     }
-
-    // Sort hosts based on block height.
-    std::sort(hostHeights.begin(), hostHeights.end(), 
-              [](const pair<string, int64_t>& a, const pair<string, int64_t>& b) {
-                  return a.second > b.second;
-              });
-
-    // The best host will be the first in the sorted list.
-    if (!hostHeights.empty()) {
-        return hostHeights[0].first;
-    }
-
-    return "";
+    return bestHost;
 }
+
 
 /*
     Returns number of block headers downloaded by peer host
@@ -309,35 +292,6 @@ SHA256Hash HostManager::getBlockHash(string host, uint64_t blockId) const{
     return ret;
 }
 
-// This is a utility function to handle the data received from curl.
-static size_t writeCallback(void* contents, size_t size, size_t nmemb, void* userp) {
-    ((string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-}
-
-int HostManager::getBlockHeightFromPeer(const string& host) const {
-    CURL* curl;
-    CURLcode res;
-    string readBuffer;
-
-    curl = curl_easy_init();
-    if(curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, (host + "/block_count").c_str());
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
-        res = curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-
-        if(res != CURLE_OK) {
-            Logger::logError("CurlError", "Failed to fetch block height from " + host + ". Curl error: " + curl_easy_strerror(res));
-            return -1;
-        } else {
-            return stoi(readBuffer);
-        }
-    }
-    return -1;
-}
-
 
 /*
     Returns N unique random hosts that have pinged us
@@ -350,10 +304,8 @@ set<string> HostManager::sampleFreshHosts(int count) {
         uint64_t lastPingAge = std::time(0) - pair.second;
         // only return peers that have pinged
         if (lastPingAge < HOST_MIN_FRESHNESS && !isJsHost(pair.first)) {
-            int blockHeight = getBlockHeightFromPeer(pair.first);
-            if(blockHeight != -1) {
-                freshHostsWithHeight.push_back({pair.first, blockHeight});
-            }
+            if (auto v{getCurrentBlockCount(pair.first)}; v.has_value())
+                freshHostsWithHeight.push_back({pair.first, *v});
         }
     }
 
@@ -393,12 +345,8 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
 
     // check if the host is reachable:
     if (!isJsHost(addr)) {
-        try {
-            json name = getName(addr);
-        } catch(...) {
-            // if not exit
+        if (auto name{getName(addr)}; !name.has_value())
             return;
-        }
     }
 
     // add to our host list
