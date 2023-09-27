@@ -96,7 +96,7 @@ void MemPool::mempool_sync() {
 
         for (const auto &neighbor : neighbors)
         {
-            int height = hosts.getBlockHeightFromPeer(neighbor);
+            int height = hosts.getCurrentBlockCount(neighbor);
             neighborHeights[neighbor] = height;
         }
 
