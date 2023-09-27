@@ -121,7 +121,7 @@ void MemPool::mempool_sync() {
 
         std::vector<std::future<bool>> sendResults;
         for ( const auto &neighbor : neighbors) {
-            if (failedPeers.count(neighbor) != 0)
+            if (failedNeighbors.count(neighbor) != 0)
                 continue;
 
              for (const auto& tx : txs) {
