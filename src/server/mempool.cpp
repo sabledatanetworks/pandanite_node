@@ -15,7 +15,7 @@
 #define TX_BRANCH_FACTOR 10
 #define MIN_FEE_TO_ENTER_MEMPOOL 1
 
-MemPool::MemPool(HostManager &h, BlockChain &b) : hosts(h), blockchain(b)
+MemPool::MemPool(HostManager &h, BlockChain &b) : shutdown(false), hosts(h), blockchain(b)
 {
     shutdown = false;
 }
@@ -28,7 +28,7 @@ MemPool::~MemPool()
 void MemPool::mempool_sync() {
 
     const int MAX_RETRIES = 3;
-    std::map<std::string, std::chrono::system_clock::time_point> failedNeighbors;
+    std::map<std::string, std::chrono::steady_clock::time_point> failedNeighbors;
     std::mutex failedNeighborsMutex;
 
     while (!shutdown)
@@ -73,12 +73,17 @@ void MemPool::mempool_sync() {
             }
         }
 
+        // Logging invalidTxs
+        for (const auto& tx : invalidTxs) {
+            Logger::logError("MemPool::mempool_sync", "A transaction is invalid and removed from the queue.");
+        }
+
         if (transactionQueue.empty())
         {
             continue;
         }
 
-        auto now = std::chrono::system_clock::now();
+        auto now = std::chrono::steady_clock::now();
         for (auto it = failedNeighbors.begin(); it != failedNeighbors.end();)
         {
             if ((now - it->second) > std::chrono::hours(24))
@@ -108,18 +113,16 @@ void MemPool::mempool_sync() {
         // Filter out neighbors not at maxBlockHeight
         for(auto it = neighbors.begin(); it != neighbors.end(); ) {
             if(neighborHeights[*it] < maxBlockHeight) {
-            it = neighbors.erase(it);
-             } else {
+                it = neighbors.erase(it);
+            } else {
                 ++it;
-                }
+            }
         }
 
         std::vector<std::future<bool>> sendResults;
-        for (auto neighbor : neighbors) {
-            if (failedNeighbors.find(neighbor) != failedNeighbors.end())
-            {
+        for ( const auto &neighbor : neighbors) {
+            if (failedPeers.count(neighbor) != 0)
                 continue;
-            }
 
              for (const auto& tx : txs) {
                 sendResults.push_back(std::async(std::launch::async, [this, &neighbor, &tx, &failedNeighbors, &failedNeighborsMutex]() -> bool {
@@ -131,23 +134,18 @@ void MemPool::mempool_sync() {
                         Logger::logError("Failed to send tx to ", neighbor);
                     }
                 }
-                Logger::logStatus("MemPool::mempool_sync: Skipped sending to " + neighbor);
+                Logger::logStatus("MemPool::mempool_sync: Failed sending to "s + neighbor +" "+to_string(MAX_RETRIES)+" times, giving up." );
                 
                 // Lock the mutex only for the duration of modifying the map
                 {
                     std::lock_guard<std::mutex> lock(failedNeighborsMutex);
-                    failedNeighbors[neighbor] = std::chrono::system_clock::now();
+                    failedNeighbors[neighbor] = std::chrono::steady_clock::now();
                 }
                 
                 return false;
                 }));
             }
         }
-
-            // Logging invalidTxs
-            for (const auto& tx : invalidTxs) {
-            Logger::logError("MemPool::mempool_sync", "A transaction is invalid and removed from the queue.");
-            }
 
         bool all_sent = true;
         for (auto &future : sendResults)
