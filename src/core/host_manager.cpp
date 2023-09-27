@@ -304,8 +304,10 @@ set<string> HostManager::sampleFreshHosts(int count) {
         uint64_t lastPingAge = std::time(0) - pair.second;
         // only return peers that have pinged
         if (lastPingAge < HOST_MIN_FRESHNESS && !isJsHost(pair.first)) {
-            if (auto v{getCurrentBlockCount(pair.first)}; v.has_value())
-                freshHostsWithHeight.push_back({pair.first, *v});
+            int blockHeight = getCurrentBlockCount(pair.first);
+            if(blockHeight != -1) {
+                freshHostsWithHeight.push_back({pair.first, blockHeight});
+            }
         }
     }
 
@@ -345,8 +347,12 @@ void HostManager::addPeer(string addr, uint64_t time, string version, string net
 
     // check if the host is reachable:
     if (!isJsHost(addr)) {
-        if (auto name{getName(addr)}; !name.has_value())
+        try {
+            json name = getName(addr);
+        } catch(...) {
+            // if not exit
             return;
+        }
     }
 
     // add to our host list
