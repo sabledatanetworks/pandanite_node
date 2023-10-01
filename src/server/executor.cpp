@@ -16,14 +16,6 @@ json invalidTransactions = readJsonFromFile("invalid.json");
 
 std::mutex invalidTxMutex;
 
-std::string txidToString(const SHA256Hash& hash) {
-    std::ostringstream oss;
-    for (unsigned char byte : hash) {
-        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(byte);
-    }
-    return oss.str();
-}
-
 void addInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
     std::lock_guard<std::mutex> lock(invalidTxMutex);
 
@@ -154,20 +146,6 @@ string executionStatusAsString(ExecutionStatus status) {
     }
 }
 
-/*void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  LedgerState& deltas) {
-    if (!ledger.hasWallet(to)) {
-        ledger.createWallet(to);   
-    }
-    ledger.deposit(to, amt);
-    Logger::logStatus("Deposited VOID: " + std::to_string(amt));
-    auto receiverDelta = deltas.find(to);
-    if (receiverDelta == deltas.end()) {
-        deltas.insert(pair<PublicWalletAddress, TransactionAmount>(to, amt));
-    } else {
-        receiverDelta->second += amt;
-    }
-}*/
-
 void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  LedgerState& deltas) {
     if (!ledger.hasWallet(to)) {
         ledger.createWallet(to);
@@ -184,40 +162,6 @@ void deposit(PublicWalletAddress to, TransactionAmount amt, Ledger& ledger,  Led
     }
 }
 
-/*void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  LedgerState & deltas) {
-    if (ledger.hasWallet(from)) {
-        ledger.withdraw(from, amt);
-        Logger::logStatus("Withdraw VOID: " + std::to_string(amt));
-    } else {
-        throw std::runtime_error("Tried withdrawing from non-existant account");
-    }
-
-    auto senderDelta = deltas.find(from);
-    if (senderDelta == deltas.end()) {
-        deltas.insert(pair<PublicWalletAddress, TransactionAmount>(from, -amt));
-    } else {
-        senderDelta->second -= amt;
-    }
-}*/
-
-/*void withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  LedgerState & deltas) {
-    if (ledger.hasWallet(from)) {
-        ledger.withdraw(from, amt);
-        Logger::logStatus("Withdraw VOID: " + std::to_string(amt));
-    } else {
-        throw std::runtime_error("Tried withdrawing from non-existant account");
-    }
-
-    auto senderDelta = deltas.find(from);
-    if (senderDelta == deltas.end()) {
-        deltas.insert(pair<PublicWalletAddress, TransactionAmount>(from, -amt));
-        Logger::logStatus("Delta added for sender: " + std::to_string(-amt));
-    } else {
-        senderDelta->second -= amt;
-        Logger::logStatus("Delta updated for sender: " + std::to_string(senderDelta->second));
-    }
-} logging data...*/
-
 bool withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  LedgerState & deltas) {
     if (!ledger.hasWallet(from)) {
         return false; // Wallet doesn't exist
@@ -225,7 +169,7 @@ bool withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
 
     TransactionAmount curr_balance = ledger.getWalletValue(from);
     if (curr_balance < amt) {
-	Logger::logStatus("Status current Balance: " + std::to_string(curr_balance) + " amount parsed: " + std::to_string(amt));
+	//Logger::logStatus("Status current Balance: " + std::to_string(curr_balance) + " amount parsed: " + std::to_string(amt));
         return false; // Insufficient funds
     }
 
@@ -233,22 +177,21 @@ bool withdraw(PublicWalletAddress from, TransactionAmount amt, Ledger& ledger,  
     auto senderDelta = deltas.find(from);
     if (senderDelta == deltas.end()) {
         deltas.insert(pair<PublicWalletAddress, TransactionAmount>(from, -amt));
-        Logger::logStatus("Delta added for sender: " + std::to_string(-amt));
+        //Logger::logStatus("Delta added for sender: " + std::to_string(-amt));
     } else {
         senderDelta->second -= amt;
-	Logger::logStatus("Delta updated for sender: " + std::to_string(senderDelta->second));
+	//Logger::logStatus("Delta updated for sender: " + std::to_string(senderDelta->second));
     }
 
     // After updating the deltas
     ledger.withdraw(from, amt);  // Assuming this doesn't throw exceptions on failure
-    Logger::logStatus("Withdraw VOID: " + std::to_string(amt));
+    //Logger::logStatus("Withdraw VOID: " + std::to_string(amt));
     return true;  // Successful withdrawal
 }
 
 
 
 ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& ledger, LedgerState & deltas, TransactionAmount blockMiningFee, uint32_t blockId) {
-    Logger::logStatus("Starting updateLedger for block " + std::to_string(blockId) + " TXID: " + SHA256toString(t.getTxid()));
 
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
@@ -290,7 +233,6 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
 
         if (total < amt) {
             if (!isInvalidTransaction(blockId, from) && blockId != 0) {
-                Logger::logStatus("Balance too low for transaction in block " + std::to_string(blockId) + ". Amount involved: " + std::to_string(amt));
                 addInvalidTransaction(blockId, from);
                 return BALANCE_TOO_LOW;
             }
@@ -300,7 +242,6 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
 
         if (total < fees) {
             if (!isInvalidTransaction(blockId, from) && blockId != 0) {
-                Logger::logStatus("Insufficient balance for fees in block " + std::to_string(blockId) + ". Fees involved: " + std::to_string(fees));
                 addInvalidTransaction(blockId, from);
                 return BALANCE_TOO_LOW;
             }
@@ -318,13 +259,7 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
         }
     }
 
-    // Log updated balances after the transaction
-    Logger::logStatus("Updated balance of sender (" + walletAddressToString(from) + "): " + std::to_string(ledger.getWalletValue(from)));
-    Logger::logStatus("Updated balance of receiver (" + walletAddressToString(to) + "): " + std::to_string(ledger.getWalletValue(to)));
-
-    // Log the current state of deltas
     for (auto& delta : deltas) {
-        //Logger::logStatus("Delta for wallet (" + walletAddressToString(delta.first) + "): " + std::to_string(delta.second));
     }
 
     Logger::logStatus("Finished updateLedger for block " + std::to_string(blockId));
@@ -333,45 +268,28 @@ ExecutionStatus updateLedger(Transaction t, PublicWalletAddress& miner, Ledger& 
 
 
 void rollbackLedger(Transaction t, PublicWalletAddress& miner, Ledger& ledger) {
-    Logger::logStatus("Starting rollback for transaction with hash: " + SHA256toString(t.getHash()));
 
     TransactionAmount amt = t.getAmount();
     TransactionAmount fees = t.getTransactionFee();
     PublicWalletAddress to = t.toWallet();
     PublicWalletAddress from = t.fromWallet();
 
-    // Log current balances before rollback
-    Logger::logStatus("Initial balance of sender (" + walletAddressToString(from) + "): " + std::to_string(ledger.getWalletValue(from)));
-    Logger::logStatus("Initial balance of receiver (" + walletAddressToString(to) + "): " + std::to_string(ledger.getWalletValue(to)));
-
     if (t.isFee()) {
-        Logger::logStatus("Reverting fee deposit for transaction with hash: " + SHA256toString(t.getHash()));
         ledger.revertDeposit(to, amt);
     } else {
         if (fees > 0) {
-            Logger::logStatus("Reverting fee deposit and send for transaction with hash: " + SHA256toString(t.getHash()));
             ledger.revertDeposit(miner, fees);
             ledger.revertSend(from, fees);
         }
-        Logger::logStatus("Reverting transaction deposit and send for hash: " + SHA256toString(t.getHash()));
         ledger.revertDeposit(to, amt);
         ledger.revertSend(from, amt);
     }
-
-    // Log updated balances after rollback
-    Logger::logStatus("Updated balance of sender (" + walletAddressToString(from) + "): " + std::to_string(ledger.getWalletValue(from)));
-    Logger::logStatus("Updated balance of receiver (" + walletAddressToString(to) + "): " + std::to_string(ledger.getWalletValue(to)));
-
-    Logger::logStatus("Finished rollback for transaction with hash: " + SHA256toString(t.getHash()));
 }
 
 void Executor::Rollback(Ledger& ledger, LedgerState& deltas) {
-    Logger::logStatus("Starting Executor::Rollback.");
 
     for(auto it : deltas) {
-        Logger::logStatus("Reverting delta for wallet (" + walletAddressToString(it.first) + "): " + std::to_string(it.second));
         ledger.withdraw(it.first, it.second);
-        Logger::logStatus("Updated balance of wallet (" + walletAddressToString(it.first) + "): " + std::to_string(ledger.getWalletValue(it.first)));
     }
 
     Logger::logStatus("Finished Executor::Rollback.");
@@ -390,17 +308,12 @@ void Executor::RollbackBlock(Block& curr, Ledger& ledger, TransactionStore & txd
         }
     }
 
-    Logger::logStatus("Starting to rollback transactions in reverse order for block ID: " + std::to_string(curr.getId()));
     for(int i = curr.getTransactions().size() - 1; i >=0; i--) {
         Transaction t = curr.getTransactions()[i];
-
-        // Log the hash of the transaction being rolled back for better traceability
-        Logger::logStatus("Rolling back transaction with hash: " + SHA256toString(t.getHash()) + " in block ID: " + std::to_string(curr.getId()));
 
         rollbackLedger(t, miner, ledger);
         if (!t.isFee()) {
             txdb.removeTransaction(t);
-            Logger::logStatus("Removed transaction with hash: " + SHA256toString(t.getHash()) + " from the TransactionStore.");
         }
     }
 
@@ -461,4 +374,3 @@ ExecutionStatus Executor::ExecuteBlock(Block& curr, Ledger& ledger, TransactionS
     }
     return SUCCESS;
 }
-
