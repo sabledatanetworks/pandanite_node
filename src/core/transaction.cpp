@@ -123,6 +123,7 @@ Transaction::Transaction(json data) {
         this->amount = data["amount"];
         this->isTransactionFee = false;
         this->signingKey = stringToPublicKey(data["signingKey"]);
+	
     }
 }
 
@@ -135,6 +136,7 @@ TransactionAmount Transaction::getTransactionFee() const {
 
 
 json Transaction::toJson() {
+
     json result;
     result["to"] = walletAddressToString(this->toWallet());
     result["amount"] = this->amount;
@@ -185,7 +187,6 @@ PublicKey Transaction::getSigningKey() {
     return this->signingKey;
 }
 
-
 SHA256Hash Transaction::getHash() const {
     SHA256Hash ret;
     SHA256_CTX sha256;
@@ -213,6 +214,7 @@ TransactionAmount Transaction::getAmount() const {
 TransactionAmount Transaction::getFee() const {
     return this->fee;
 }
+
 
 SHA256Hash Transaction::hashContents() const {
     SHA256Hash ret;

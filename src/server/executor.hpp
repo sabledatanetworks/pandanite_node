@@ -4,6 +4,7 @@
 #include "../core/common.hpp"
 #include "ledger.hpp"
 #include "tx_store.hpp"
+//#include "../core/crypto.cpp"
 using namespace std;
 
 enum ExecutionStatus {
