@@ -6,7 +6,8 @@ nlohmann_json/3.11.2
 leveldb/1.23
 
 [generators]
-cmake
+CMakeDeps
+CMakeToolchain
 
 [options]
 openssl/*:shared=True
