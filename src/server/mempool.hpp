@@ -33,8 +33,22 @@ protected:
     std::list<Transaction> toSend;
     BlockChain& blockchain;
     HostManager& hosts;
-    std::set<Transaction> transactionQueue;
+    
+    // Transaction ordering by fee
+    struct TransactionComparator {
+        bool operator()(const Transaction& a, const Transaction& b) const {
+            if (a.getFee() != b.getFee()) {
+                return a.getFee() > b.getFee();
+            }
+            return a.getHash() < b.getHash();
+        }
+    };
+    
+    std::set<Transaction, TransactionComparator> transactionQueue;
     std::vector<std::thread> syncThread;
     mutable std::mutex mempool_mutex;
     std::mutex toSend_mutex;
+    
+    // Track nonces for each wallet
+    std::map<PublicWalletAddress, uint64_t> walletNonces;
 };

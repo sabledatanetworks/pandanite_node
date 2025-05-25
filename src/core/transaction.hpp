@@ -23,6 +23,8 @@ void transactionInfoToBuffer(TransactionInfo& t, char* buffer);
 
 class Transaction {
     public:
+        static const uint64_t TRANSACTION_EXPIRY = 3600; // 1 hour expiry
+        
         Transaction(json t);
         Transaction();
         Transaction(const Transaction & t);
@@ -48,6 +50,9 @@ class Transaction {
         TransactionSignature getSignature() const;
         bool signatureValid() const;
         bool isFee() const;
+        bool isExpired() const;
+        uint64_t getNonce() const;
+        void setNonce(uint64_t nonce);
     protected:
         TransactionSignature signature;
         PublicKey signingKey;
@@ -57,6 +62,7 @@ class Transaction {
         TransactionAmount amount;
         TransactionAmount fee;
         bool isTransactionFee;
+        uint64_t nonce;
         friend bool operator==(const Transaction& a, const Transaction& b);
         friend bool operator<(const Transaction& a, const Transaction& b);
 };

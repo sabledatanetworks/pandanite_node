@@ -1,3 +1,50 @@
+# Fast Secure Blockchain Implementation
+
+A high-performance blockchain implementation with enhanced security features to prevent double-spending and negative balances.
+
+## Security Features
+
+- **Double-Spend Protection**
+  - Transaction nonce system
+  - Atomic balance operations
+  - Transaction expiration
+  - Fee-based transaction ordering
+
+- **Balance Protection**
+  - Overflow/underflow checks
+  - Atomic deposit/withdraw operations
+  - Race condition prevention
+
+## Building
+
+```bash
+mkdir build
+cd build
+cmake ..
+make
+```
+
+## Dependencies
+
+- OpenSSL
+- LevelDB
+- CMake 3.10+
+- C++17 compatible compiler
+
+## Security Considerations
+
+The implementation includes several security measures:
+1. Transaction expiration (1 hour)
+2. Nonce-based replay protection
+3. Atomic balance operations
+4. Fee-based transaction ordering
+5. Overflow/underflow protection
+6. Double-spend detection
+
+## License
+
+Private repository - All rights reserved
+
 Pandanite 
 ====================
 <image src="img/logo.png" width=350/>

@@ -50,6 +50,7 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->timestamp = std::time(0);
     this->fee = fee;
     this->signingKey = signingKey;
+    this->nonce = 0;
 }
 
 Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, TransactionAmount amount, PublicKey signingKey, TransactionAmount fee, uint64_t timestamp) {
@@ -60,6 +61,7 @@ Transaction::Transaction(PublicWalletAddress from, PublicWalletAddress to, Trans
     this->timestamp = timestamp;
     this->fee = fee;
     this->signingKey = signingKey;
+    this->nonce = 0;
 }
 
 Transaction::Transaction() {
@@ -227,6 +229,7 @@ SHA256Hash Transaction::hashContents() const {
     SHA256_Update(&sha256, (unsigned char*)&this->fee, sizeof(TransactionAmount));
     SHA256_Update(&sha256, (unsigned char*)&this->amount, sizeof(TransactionAmount));
     SHA256_Update(&sha256, (unsigned char*)&this->timestamp, sizeof(uint64_t));
+    SHA256_Update(&sha256, (unsigned char*)&this->nonce, sizeof(uint64_t));
     SHA256_Final(ret.data(), &sha256);
     return ret;
 }
@@ -253,4 +256,16 @@ bool operator==(const Transaction& a, const Transaction& b) {
         if (publicKeyToString(a.signingKey) != publicKeyToString(b.signingKey)) return false;
     }
     return true;
+}
+
+bool Transaction::isExpired() const {
+    return (getCurrentTime() - timestamp) > TRANSACTION_EXPIRY;
+}
+
+uint64_t Transaction::getNonce() const {
+    return nonce;
+}
+
+void Transaction::setNonce(uint64_t n) {
+    nonce = n;
 }

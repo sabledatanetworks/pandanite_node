@@ -1,9 +1,44 @@
+# Build directories
+build/
+bin/
+obj/
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE files
+.vs/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Dependencies
+external/
+
+# Database files
+*.db
+*.ldb
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
 main
 keys/
-build/
 data/
 test-data/
-bin/
 .vscode/
 CMakeFiles/
 Makefile
@@ -11,5 +46,4 @@ cmake_install.cmake
 CMakeCache.txt
 keys.json
 TODO
-.DS_Store
 backup.txt

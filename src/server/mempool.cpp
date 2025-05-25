@@ -184,42 +184,59 @@ ExecutionStatus MemPool::addTransaction(Transaction t)
 {
     std::unique_lock<std::mutex> lock(mempool_mutex);
 
-    if (transactionQueue.count(t) > 0)
-    {
+    // Check if transaction is expired
+    if (t.isExpired()) {
+        return EXPIRED_TRANSACTION;
+    }
+
+    // Check if transaction is already in queue
+    if (transactionQueue.count(t) > 0) {
         return ALREADY_IN_QUEUE;
     }
 
-    if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL)
-    {
+    // Check if transaction fee is sufficient
+    if (t.getFee() < MIN_FEE_TO_ENTER_MEMPOOL) {
         return TRANSACTION_FEE_TOO_LOW;
     }
 
+    // Verify transaction against blockchain
     ExecutionStatus status = blockchain.verifyTransaction(t);
-    if (status != SUCCESS)
-    {
+    if (status != SUCCESS) {
         return status;
+    }
+
+    // Check nonce for non-fee transactions
+    if (!t.isFee()) {
+        PublicWalletAddress from = t.fromWallet();
+        uint64_t expectedNonce = walletNonces[from];
+        if (t.getNonce() != expectedNonce) {
+            return INVALID_NONCE;
+        }
     }
 
     TransactionAmount outgoing = 0;
     TransactionAmount totalTxAmount = t.getAmount() + t.getFee();
 
-    if (!t.isFee())
-    {
+    if (!t.isFee()) {
         outgoing = mempoolOutgoing[t.fromWallet()];
     }
 
-    if (!t.isFee() && outgoing + totalTxAmount > blockchain.getWalletValue(t.fromWallet()))
-    {
+    // Check if wallet has sufficient balance
+    if (!t.isFee() && outgoing + totalTxAmount > blockchain.getWalletValue(t.fromWallet())) {
         return BALANCE_TOO_LOW;
     }
 
-    if (transactionQueue.size() >= (MAX_TRANSACTIONS_PER_BLOCK - 1))
-    {
+    if (transactionQueue.size() >= (MAX_TRANSACTIONS_PER_BLOCK - 1)) {
         return QUEUE_FULL;
     }
 
+    // Add transaction to queue
     transactionQueue.insert(t);
-    mempoolOutgoing[t.fromWallet()] += totalTxAmount;
+    if (!t.isFee()) {
+        mempoolOutgoing[t.fromWallet()] += totalTxAmount;
+        walletNonces[t.fromWallet()]++; // Increment nonce for next transaction
+    }
+
     std::unique_lock<std::mutex> toSend_lock(toSend_mutex);
     toSend.push_back(t);
 
@@ -260,22 +277,17 @@ std::pair<char *, size_t> MemPool::getRaw() const
     return std::make_pair(buf, len);
 }
 
-void MemPool::finishBlock(Block &block)
-{
+void MemPool::finishBlock(Block& block) {
     std::unique_lock<std::mutex> lock(mempool_mutex);
-    for (const auto &tx : block.getTransactions())
-    {
+    for (const auto& tx : block.getTransactions()) {
         auto it = transactionQueue.find(tx);
-        if (it != transactionQueue.end())
-        {
+        if (it != transactionQueue.end()) {
             transactionQueue.erase(it);
 
-            if (!tx.isFee())
-            {
+            if (!tx.isFee()) {
                 mempoolOutgoing[tx.fromWallet()] -= tx.getAmount() + tx.getFee();
 
-                if (mempoolOutgoing[tx.fromWallet()] == 0)
-                {
+                if (mempoolOutgoing[tx.fromWallet()] == 0) {
                     mempoolOutgoing.erase(tx.fromWallet());
                 }
             }

@@ -43,6 +43,12 @@ TransactionAmount Ledger::getWalletValue(const PublicWalletAddress& wallet) cons
 
 void Ledger::withdraw(const PublicWalletAddress& wallet, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(wallet);
+    if (amt > value) {
+        throw std::runtime_error("Insufficient balance");
+    }
+    if (value - amt > value) { // Check for underflow
+        throw std::runtime_error("Balance underflow");
+    }
     value -= amt;
     this->setWalletValue(wallet, value);
 }
@@ -54,10 +60,41 @@ void Ledger::revertSend(const PublicWalletAddress& wallet, TransactionAmount amt
 
 void Ledger::deposit(const PublicWalletAddress& wallet, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(wallet);
+    if (value + amt < value) { // Check for overflow
+        throw std::runtime_error("Balance overflow");
+    }
     this->setWalletValue(wallet, value + amt);
 }
 
 void Ledger::revertDeposit(PublicWalletAddress to, TransactionAmount amt) {
     TransactionAmount value = this->getWalletValue(to);
     this->setWalletValue(to, value - amt);
+}
+
+bool Ledger::atomicWithdrawIfSufficient(const PublicWalletAddress& wallet, TransactionAmount amt) {
+    std::lock_guard<std::mutex> lock(ledger_mutex);
+    try {
+        TransactionAmount value = this->getWalletValue(wallet);
+        if (amt > value || value - amt > value) {
+            return false;
+        }
+        this->setWalletValue(wallet, value - amt);
+        return true;
+    } catch (const std::exception& e) {
+        return false;
+    }
+}
+
+bool Ledger::atomicDepositIfValid(const PublicWalletAddress& wallet, TransactionAmount amt) {
+    std::lock_guard<std::mutex> lock(ledger_mutex);
+    try {
+        TransactionAmount value = this->getWalletValue(wallet);
+        if (value + amt < value) {
+            return false;
+        }
+        this->setWalletValue(wallet, value + amt);
+        return true;
+    } catch (const std::exception& e) {
+        return false;
+    }
 }
