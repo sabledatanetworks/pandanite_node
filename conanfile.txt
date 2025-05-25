@@ -2,7 +2,6 @@
 nlohmann_json/3.11.2
 openssl/1.1.1w
 leveldb/1.23
-curl/7.86.0
 
 [generators]
 CMakeDeps
@@ -11,9 +10,11 @@ CMakeToolchain
 [options]
 openssl/*:shared=True
 leveldb/*:shared=False
-curl/*:shared=True
 
 [imports]
 bin, *.dll -> ./bin
 lib, *.dylib* -> ./bin
 lib, *.so* -> ./bin
+
+[system_requires]
+libcurl4-openssl-dev

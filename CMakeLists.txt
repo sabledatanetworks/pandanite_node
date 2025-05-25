@@ -78,7 +78,7 @@ if (UNIX)
                 OpenSSL::SSL
                 OpenSSL::Crypto
                 leveldb::leveldb
-                CURL::libcurl
+                ${CURL_LIBRARIES}
                 stdc++fs
             )
         endforeach()
@@ -92,7 +92,7 @@ if (UNIX)
                 OpenSSL::SSL
                 OpenSSL::Crypto
                 leveldb::leveldb
-                CURL::libcurl
+                ${CURL_LIBRARIES}
                 stdc++fs
             )
         endforeach()
