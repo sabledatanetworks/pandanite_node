@@ -8,8 +8,9 @@
 #define TIMEOUT_SUBMIT_MS 30000
 #define BLOCKS_PER_FETCH 200
 #define BLOCK_HEADERS_PER_FETCH 2000
-#define BUILD_VERSION "0.9.0-alpha"
 
+// Include generated version
+#include "version.h"
 
 // Files
 #define LEDGER_FILE_PATH "./data/ledger"
@@ -19,7 +20,6 @@
 
 // Blocks
 #define MAX_TRANSACTIONS_PER_BLOCK 25000
-#define PUFFERFISH_START_BLOCK 124500
 
 // Difficulty
 #define DIFFICULTY_LOOKBACK 100

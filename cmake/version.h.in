@@ -1,0 +1,6 @@
+#pragma once
+
+// Version information
+#define BUILD_VERSION "@GIT_VERSION@"
+#define BUILD_COMMIT "@GIT_COMMIT_HASH@"
+#define BUILD_DATE "@CMAKE_BUILD_DATE@" 

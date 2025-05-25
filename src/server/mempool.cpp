@@ -172,6 +172,13 @@ void MemPool::mempool_sync() {
 void MemPool::sync()
 {
     syncThread.push_back(std::thread(&MemPool::mempool_sync, this));
+    // Add cleanup thread
+    cleanupThread.push_back(std::thread([this]() {
+        while (true) {
+            cleanupExpiredTransactions();
+            std::this_thread::sleep_for(std::chrono::minutes(1));
+        }
+    }));
 }
 
 bool MemPool::hasTransaction(Transaction t)
@@ -199,48 +206,45 @@ ExecutionStatus MemPool::addTransaction(Transaction t)
         return TRANSACTION_FEE_TOO_LOW;
     }
 
-    // Verify transaction against blockchain
-    ExecutionStatus status = blockchain.verifyTransaction(t);
-    if (status != SUCCESS) {
-        return status;
-    }
-
-    // Check nonce for non-fee transactions
+    // Atomic balance check and transaction verification
     if (!t.isFee()) {
+        // Get a snapshot of the current state
+        TransactionAmount totalRequired = t.getAmount() + t.getFee();
+        TransactionAmount currentBalance = blockchain.getWalletValue(t.fromWallet());
+        TransactionAmount pendingOutgoing = mempoolOutgoing[t.fromWallet()];
+        
+        // Verify transaction first
+        ExecutionStatus status = blockchain.verifyTransaction(t);
+        if (status != SUCCESS) {
+            return status;
+        }
+
+        // Double check balance hasn't changed
+        if (currentBalance < (totalRequired + pendingOutgoing)) {
+            return BALANCE_TOO_LOW;
+        }
+
+        // Check nonce
         PublicWalletAddress from = t.fromWallet();
         uint64_t expectedNonce = walletNonces[from];
         if (t.getNonce() != expectedNonce) {
             return INVALID_NONCE;
         }
+
+        // All checks passed, update state atomically
+        mempoolOutgoing[from] += totalRequired;
+        transactionQueue.insert(t);
+        walletNonces[from]++;
+        return SUCCESS;
+    } else {
+        // For fee transactions, just verify and add
+        ExecutionStatus status = blockchain.verifyTransaction(t);
+        if (status != SUCCESS) {
+            return status;
+        }
+        transactionQueue.insert(t);
+        return SUCCESS;
     }
-
-    TransactionAmount outgoing = 0;
-    TransactionAmount totalTxAmount = t.getAmount() + t.getFee();
-
-    if (!t.isFee()) {
-        outgoing = mempoolOutgoing[t.fromWallet()];
-    }
-
-    // Check if wallet has sufficient balance
-    if (!t.isFee() && outgoing + totalTxAmount > blockchain.getWalletValue(t.fromWallet())) {
-        return BALANCE_TOO_LOW;
-    }
-
-    if (transactionQueue.size() >= (MAX_TRANSACTIONS_PER_BLOCK - 1)) {
-        return QUEUE_FULL;
-    }
-
-    // Add transaction to queue
-    transactionQueue.insert(t);
-    if (!t.isFee()) {
-        mempoolOutgoing[t.fromWallet()] += totalTxAmount;
-        walletNonces[t.fromWallet()]++; // Increment nonce for next transaction
-    }
-
-    std::unique_lock<std::mutex> toSend_lock(toSend_mutex);
-    toSend.push_back(t);
-
-    return SUCCESS;
 }
 
 size_t MemPool::size()
@@ -291,6 +295,23 @@ void MemPool::finishBlock(Block& block) {
                     mempoolOutgoing.erase(tx.fromWallet());
                 }
             }
+        }
+    }
+}
+
+void MemPool::cleanupExpiredTransactions() {
+    std::unique_lock<std::mutex> lock(mempool_mutex);
+    auto now = std::chrono::system_clock::now();
+    
+    for (auto it = transactionQueue.begin(); it != transactionQueue.end();) {
+        if (it->isExpired()) {
+            if (!it->isFee()) {
+                // Revert pending outgoing amount
+                mempoolOutgoing[it->fromWallet()] -= (it->getAmount() + it->getFee());
+            }
+            it = transactionQueue.erase(it);
+        } else {
+            ++it;
         }
     }
 }

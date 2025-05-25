@@ -103,6 +103,8 @@ void BlockChain::initChain() {
         this->lastHash = lastBlock.getHash();
     } else {
         this->resetChain();
+        // Set Pufferfish difficulty from block 1
+        this->difficulty = MIN_DIFFICULTY;
     }
 }
 
@@ -285,9 +287,6 @@ void BlockChain::updateDifficulty() {
     int32_t target = numBlocksElapsed * DESIRED_BLOCK_TIME_SEC;
     int32_t difficulty = last.getDifficulty();
     this->difficulty = computeDifficulty(difficulty, elapsed, target);
-    if (this->numBlocks >= PUFFERFISH_START_BLOCK && this->numBlocks < (PUFFERFISH_START_BLOCK + DIFFICULTY_LOOKBACK*2)) {
-        this->difficulty = MIN_DIFFICULTY;
-    }
 }
 
 uint32_t BlockChain::findBlockForTransactionId(SHA256Hash txid) {
@@ -312,18 +311,34 @@ ExecutionStatus BlockChain::verifyTransaction(const Transaction& t) {
     if (this->isSyncing) return IS_SYNCING;
     if (t.isFee()) return EXTRA_MINING_FEE;
     if (!t.signatureValid()) return INVALID_SIGNATURE;
-    LedgerState deltas;
-    // verify the transaction is consistent with ledger
+    
+    // Add nonce validation
+    if (!t.isFee()) {
+        PublicWalletAddress from = t.fromWallet();
+        uint64_t expectedNonce = this->getWalletNonce(from);
+        if (t.getNonce() != expectedNonce) {
+            return INVALID_NONCE;
+        }
+    }
+    
+    // Atomic transaction verification
     std::unique_lock<std::mutex> ul(lock);
+    
+    // Take a snapshot of the current state
+    LedgerState snapshot = this->getLedger().getState();
+    
+    // Verify transaction
+    LedgerState deltas;
     ExecutionStatus status = Executor::ExecuteTransaction(this->getLedger(), t, deltas);
-
-    //roll back the ledger to it's original state:
+    
+    // Rollback changes
     Executor::Rollback(this->getLedger(), deltas);
-
+    
+    // Check if transaction exists
     if (this->txdb.hasTransaction(t)) {
         status = EXPIRED_TRANSACTION;
     }
-
+    
     return status;
 }
 
@@ -376,7 +391,12 @@ ExecutionStatus BlockChain::addBlockSync(Block& block) {
     
 
 ExecutionStatus BlockChain::addBlock(Block& block) {
-    // check difficulty + nonce
+    std::unique_lock<std::mutex> ul(lock);
+    
+    // Take a snapshot of the current state
+    LedgerState snapshot = this->getLedger().getState();
+    
+    // Verify block
     if (block.getTransactions().size() > MAX_TRANSACTIONS_PER_BLOCK) return INVALID_TRANSACTION_COUNT;
     if (block.getId() != this->numBlocks + 1) return INVALID_BLOCK_ID;
     if (block.getDifficulty() != this->difficulty) {
@@ -388,12 +408,12 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
     }
     if (!block.verifyNonce()) return INVALID_NONCE;
     if (block.getLastBlockHash() != this->getLastHash()) return INVALID_LASTBLOCK_HASH;
+    
+    // Verify timestamp
     if (block.getId() != 1) {
-        // block must be less than 2 hrs into future from network time
         uint64_t maxTime = this->hosts.getNetworkTimestamp() + 120*60;
         if (block.getTimestamp() > maxTime) return BLOCK_TIMESTAMP_IN_FUTURE;
-
-        // block must be after the median timestamp of last 10 blocks
+        
         if (this->numBlocks > 10) {
             vector<uint64_t> times;
             for(int i = 0; i < 10; i++) {
@@ -401,31 +421,31 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
                 times.push_back(b.getTimestamp());
             }
             std::sort(times.begin(), times.end());
-            // compute median
-            uint64_t medianTime;
-            if (times.size() % 2 == 0) {
-                medianTime = (times[times.size()/2] + times[times.size()/2 - 1])/2;
-            } else {
-                medianTime = times[times.size()/2];
-            }
+            uint64_t medianTime = times.size() % 2 == 0 ? 
+                (times[times.size()/2] + times[times.size()/2 - 1])/2 :
+                times[times.size()/2];
             if (block.getTimestamp() < medianTime) return BLOCK_TIMESTAMP_TOO_OLD;
         }
     }
-    // compute merkle tree and verify root matches;
+    
+    // Verify merkle root
     MerkleTree m;
     m.setItems(block.getTransactions());
     SHA256Hash computedRoot = m.getRootHash();
     if (block.getMerkleRoot() != computedRoot) return INVALID_MERKLE_ROOT;
+    
+    // Execute block transactions atomically
     LedgerState deltasFromBlock;
     ExecutionStatus status = Executor::ExecuteBlock(block, this->ledger, this->txdb, deltasFromBlock, this->getCurrentMiningFee(block.getId()));
-
+    
     if (status != SUCCESS) {
+        // Rollback on failure
         Executor::Rollback(this->ledger, deltasFromBlock);
     } else {
+        // Commit changes
         if (this->memPool != nullptr) {
             this->memPool->finishBlock(block);
         }
-        // add all transactions to txdb:
         for(auto t : block.getTransactions()) {
             this->txdb.insertTransaction(t, block.getId());
         }
@@ -439,6 +459,7 @@ ExecutionStatus BlockChain::addBlock(Block& block) {
         Logger::logStatus("Added block " + to_string(block.getId()));
         Logger::logStatus("difficulty= " + to_string(block.getDifficulty()));
     }
+    
     return status;
 }
 
