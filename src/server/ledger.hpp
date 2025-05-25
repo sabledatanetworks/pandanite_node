@@ -23,6 +23,10 @@ class Ledger {
         bool atomicWithdrawIfSufficient(const PublicWalletAddress& wallet, TransactionAmount amt);
         bool atomicDepositIfValid(const PublicWalletAddress& wallet, TransactionAmount amt);
         
+        // New methods for state management
+        void clear();
+        LedgerState getState() const;
+        
     protected:
         std::unique_ptr<leveldb::DB> db;
         std::mutex ledger_mutex;

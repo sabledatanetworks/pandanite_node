@@ -98,3 +98,26 @@ bool Ledger::atomicDepositIfValid(const PublicWalletAddress& wallet, Transaction
         return false;
     }
 }
+
+void Ledger::clear() {
+    std::lock_guard<std::mutex> lock(ledger_mutex);
+    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    for (it->SeekToFirst(); it->Valid(); it->Next()) {
+        db->Delete(leveldb::WriteOptions(), it->key());
+    }
+    delete it;
+}
+
+LedgerState Ledger::getState() const {
+    std::lock_guard<std::mutex> lock(ledger_mutex);
+    LedgerState state;
+    leveldb::Iterator* it = db->NewIterator(leveldb::ReadOptions());
+    for (it->SeekToFirst(); it->Valid(); it->Next()) {
+        PublicWalletAddress wallet;
+        std::memcpy(wallet.data(), it->key().data(), wallet.size());
+        TransactionAmount amount = *((TransactionAmount*)it->value().data());
+        state[wallet] = amount;
+    }
+    delete it;
+    return state;
+}
