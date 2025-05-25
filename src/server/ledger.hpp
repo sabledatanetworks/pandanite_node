@@ -10,6 +10,7 @@
 class Ledger {
     public:
         Ledger();
+        ~Ledger();
         void init(const std::string& dbPath);
         void closeDB();
         void deleteDB();
@@ -22,14 +23,15 @@ class Ledger {
         void revertSend(const PublicWalletAddress& wallet, TransactionAmount amt);
         void revertDeposit(PublicWalletAddress to, TransactionAmount amt);
         
-        // New atomic operations
+        // Atomic operations
         bool atomicWithdrawIfSufficient(const PublicWalletAddress& wallet, TransactionAmount amt);
         bool atomicDepositIfValid(const PublicWalletAddress& wallet, TransactionAmount amt);
         
-        // New methods for state management
+        // State management
         void clear();
         LedgerState getState() const;
         uint64_t getWalletNonce(const PublicWalletAddress& wallet) const;
+        void incrementWalletNonce(const PublicWalletAddress& wallet);
         
     protected:
         std::unique_ptr<leveldb::DB> db;

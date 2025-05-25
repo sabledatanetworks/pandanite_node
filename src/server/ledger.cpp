@@ -130,3 +130,15 @@ uint64_t Ledger::getWalletNonce(const PublicWalletAddress& wallet) const {
     }
     return it->second;
 }
+
+void Ledger::incrementWalletNonce(const PublicWalletAddress& wallet) {
+    std::lock_guard<std::mutex> lockGuard(lock);
+    if (!hasWallet(wallet)) {
+        createWallet(wallet);
+    }
+    nonces[wallet]++;
+}
+
+Ledger::~Ledger() {
+    closeDB();
+}

@@ -66,34 +66,60 @@ bool isInvalidTransaction(uint64_t blockId, PublicWalletAddress wallet) {
 
 std::string executionStatusAsString(ExecutionStatus status) {
     switch(status) {
-        case SUCCESS:
-            return "SUCCESS";
+        case SENDER_DOES_NOT_EXIST:
+            return "SENDER_DOES_NOT_EXIST";
+        case BALANCE_TOO_LOW:
+            return "BALANCE_TOO_LOW";
         case INVALID_SIGNATURE:
             return "INVALID_SIGNATURE";
-        case INSUFFICIENT_FUNDS:
-            return "INSUFFICIENT_FUNDS";
         case INVALID_NONCE:
             return "INVALID_NONCE";
-        case INVALID_BLOCK_ID:
-            return "INVALID_BLOCK_ID";
-        case INVALID_LASTBLOCK_HASH:
-            return "INVALID_LASTBLOCK_HASH";
-        case INVALID_MERKLE_ROOT:
-            return "INVALID_MERKLE_ROOT";
-        case INVALID_DIFFICULTY:
-            return "INVALID_DIFFICULTY";
-        case INVALID_TRANSACTION_COUNT:
-            return "INVALID_TRANSACTION_COUNT";
-        case BLOCK_TIMESTAMP_IN_FUTURE:
-            return "BLOCK_TIMESTAMP_IN_FUTURE";
-        case BLOCK_TIMESTAMP_TOO_OLD:
-            return "BLOCK_TIMESTAMP_TOO_OLD";
-        case IS_SYNCING:
-            return "IS_SYNCING";
-        case EXPIRED_TRANSACTION:
-            return "EXPIRED_TRANSACTION";
         case EXTRA_MINING_FEE:
             return "EXTRA_MINING_FEE";
+        case INCORRECT_MINING_FEE:
+            return "INCORRECT_MINING_FEE";
+        case INVALID_BLOCK_ID:
+            return "INVALID_BLOCK_ID";
+        case NO_MINING_FEE:
+            return "NO_MINING_FEE";
+        case INVALID_DIFFICULTY:
+            return "INVALID_DIFFICULTY";
+        case INVALID_TRANSACTION_NONCE:
+            return "INVALID_TRANSACTION_NONCE";
+        case INVALID_TRANSACTION_TIMESTAMP:
+            return "INVALID_TRANSACTION_TIMESTAMP";
+        case BLOCK_TIMESTAMP_TOO_OLD:
+            return "BLOCK_TIMESTAMP_TOO_OLD";
+        case BLOCK_TIMESTAMP_IN_FUTURE:
+            return "BLOCK_TIMESTAMP_IN_FUTURE";
+        case UNKNOWN_ERROR:
+            return "UNKNOWN_ERROR";
+        case QUEUE_FULL:
+            return "QUEUE_FULL";
+        case HEADER_HASH_INVALID:
+            return "HEADER_HASH_INVALID";
+        case EXPIRED_TRANSACTION:
+            return "EXPIRED_TRANSACTION";
+        case ALREADY_IN_QUEUE:
+            return "ALREADY_IN_QUEUE";
+        case BLOCK_ID_TOO_LARGE:
+            return "BLOCK_ID_TOO_LARGE";
+        case INVALID_MERKLE_ROOT:
+            return "INVALID_MERKLE_ROOT";
+        case INVALID_LASTBLOCK_HASH:
+            return "INVALID_LASTBLOCK_HASH";
+        case INVALID_TRANSACTION_COUNT:
+            return "INVALID_TRANSACTION_COUNT";
+        case TRANSACTION_FEE_TOO_LOW:
+            return "TRANSACTION_FEE_TOO_LOW";
+        case WALLET_SIGNATURE_MISMATCH:
+            return "WALLET_SIGNATURE_MISMATCH";
+        case IS_SYNCING:
+            return "IS_SYNCING";
+        case SUCCESS:
+            return "SUCCESS";
+        case INSUFFICIENT_FUNDS:
+            return "INSUFFICIENT_FUNDS";
         default:
             return "UNKNOWN_ERROR";
     }
