@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8.12)
 project(Pandanite)
 
+# Load Conan-generated files
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+
 # Compiler Flags
 if (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
@@ -47,13 +51,6 @@ get_git_version()
 # Add version.h to include directories
 include_directories(${CMAKE_BINARY_DIR})
 
-# Find Conan-generated files
-find_package(nlohmann_json REQUIRED)
-find_package(OpenSSL REQUIRED)
-find_package(leveldb REQUIRED)
-find_package(CURL REQUIRED)
-find_package(uwebsockets REQUIRED)
-
 # Additional includes
 include_directories(
     ${CMAKE_SOURCE_DIR}/src
@@ -61,8 +58,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_SOURCE_DIR}/src/external
     /usr/local/include/
-    ${CONAN_INCLUDE_DIRS_UWEBSOCKETS}
-    ${UWEBSOCKETS_INCLUDE_DIRS}
+    ${CONAN_INCLUDE_DIRS}
 )
 
 # Source files
@@ -84,13 +80,7 @@ if (UNIX)
         # Link libraries for APPLE
         foreach(TARGET tests server cli loader tx miner keygen)
             target_link_libraries(${TARGET} 
-                nlohmann_json::nlohmann_json
-                OpenSSL::SSL
-                OpenSSL::Crypto
-                leveldb::leveldb
-                /usr/local/Cellar/snappy/1.1.9/lib/libsnappy.a 
-                ${CURL_LIBRARIES}
-                ${CONAN_LIBS_UWEBSOCKETS}
+                ${CONAN_LIBS}
             )
         endforeach()
     endif()
@@ -99,15 +89,8 @@ if (UNIX)
         # Link libraries for UNIX
         foreach(TARGET tests server cli loader tx miner keygen)
             target_link_libraries(${TARGET} 
-                nlohmann_json::nlohmann_json
-                OpenSSL::SSL
-                OpenSSL::Crypto
-                leveldb::leveldb
+                ${CONAN_LIBS}
                 -lstdc++fs 
-                -lssl 
-                -lcrypto 
-                ${CURL_LIBRARIES}
-                ${CONAN_LIBS_UWEBSOCKETS}
             )
         endforeach()
     endif()
