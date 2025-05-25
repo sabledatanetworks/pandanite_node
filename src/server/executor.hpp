@@ -32,7 +32,8 @@ enum ExecutionStatus {
     TRANSACTION_FEE_TOO_LOW,
     WALLET_SIGNATURE_MISMATCH,
     IS_SYNCING,
-    SUCCESS
+    SUCCESS,
+    INSUFFICIENT_FUNDS
 };
 
 string executionStatusAsString(ExecutionStatus s);
