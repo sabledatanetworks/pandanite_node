@@ -9,9 +9,9 @@ CMakeDeps
 CMakeToolchain
 
 [options]
-openssl:shared=True
-leveldb:shared=False
-curl:shared=True
+openssl/*:shared=True
+leveldb/*:shared=False
+curl/*:shared=True
 
 [imports]
 bin, *.dll -> ./bin
