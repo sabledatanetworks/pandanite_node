@@ -557,3 +557,8 @@ ExecutionStatus BlockChain::startChainSync() {
     this->isSyncing = false;
     return SUCCESS;
 }
+
+uint64_t BlockChain::getWalletNonce(const PublicWalletAddress& wallet) const {
+    std::lock_guard<std::mutex> lockGuard(lock);
+    return ledger.getWalletNonce(wallet);
+}

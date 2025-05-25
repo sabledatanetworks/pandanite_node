@@ -3,6 +3,9 @@
 #include <leveldb/db.h>
 #include <mutex>
 #include <memory>
+#include <map>
+#include "../core/transaction.hpp"
+#include "ledger_state.hpp"
 
 class Ledger {
     public:
@@ -26,8 +29,12 @@ class Ledger {
         // New methods for state management
         void clear();
         LedgerState getState() const;
+        uint64_t getWalletNonce(const PublicWalletAddress& wallet) const;
         
     protected:
         std::unique_ptr<leveldb::DB> db;
         std::mutex ledger_mutex;
+        std::map<PublicWalletAddress, TransactionAmount> balances;
+        std::map<PublicWalletAddress, uint64_t> nonces;
+        mutable std::mutex lock;
 };
