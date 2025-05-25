@@ -38,7 +38,6 @@ include_directories(${CMAKE_BINARY_DIR})
 # Compiler Flags
 if (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
-    set(CONAN_DISABLE_CHECK_COMPILER TRUE)
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")    
 endif()
@@ -47,9 +46,11 @@ endif()
 set (CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
-# Conan setup
-include(${CMAKE_BINARY_DIR}/build/conanbuildinfo.cmake)
-conan_basic_setup()
+# Find Conan-generated files
+find_package(nlohmann_json REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(leveldb REQUIRED)
+find_package(CURL REQUIRED)
 
 # Additional includes
 include_directories(/usr/local/include/)
@@ -58,9 +59,6 @@ include_directories(/usr/local/include/)
 file(GLOB CORE_SOURCES "src/core/*.cpp")
 file(GLOB SERVER_SOURCES "src/server/*.cpp")
 file(GLOB EXTERNAL_SOURCES "src/external/ed25519/*.c" "src/external/murmurhash3/*.cpp" "src/external/sha256/*.cpp" "src/external/bigint/*.cpp")
-
-# Find necessary packages
-find_package(CURL REQUIRED)
 
 # Targets and linking
 if (UNIX)
@@ -75,14 +73,28 @@ if (UNIX)
     if (APPLE)
         # Link libraries for APPLE
         foreach(TARGET tests server cli loader tx miner keygen)
-            target_link_libraries(${TARGET} ${CONAN_LIBS} /usr/local/Cellar/leveldb/1.23/lib/libleveldb.a /usr/local/Cellar/snappy/1.1.9/lib/libsnappy.a ${CURL_LIBRARIES})
+            target_link_libraries(${TARGET} 
+                nlohmann_json::nlohmann_json
+                OpenSSL::SSL
+                OpenSSL::Crypto
+                leveldb::leveldb
+                CURL::libcurl
+                stdc++fs
+            )
         endforeach()
     endif()
 
     if (UNIX AND NOT APPLE)
         # Link libraries for UNIX
         foreach(TARGET tests server cli loader tx miner keygen)
-            target_link_libraries(${TARGET} ${CONAN_LIBS} -lleveldb -lstdc++fs -lssl -lcrypto ${CURL_LIBRARIES})
+            target_link_libraries(${TARGET} 
+                nlohmann_json::nlohmann_json
+                OpenSSL::SSL
+                OpenSSL::Crypto
+                leveldb::leveldb
+                CURL::libcurl
+                stdc++fs
+            )
         endforeach()
     endif()
 endif()
