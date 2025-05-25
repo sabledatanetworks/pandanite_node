@@ -1,12 +1,12 @@
 [requires]
+zlib/1.2.13
+openssl/3.0.0
+uwebsockets/19.3.0
 nlohmann_json/3.11.2
-openssl/1.1.1w
 leveldb/1.23
-uwebsockets/20.8.0
 
 [generators]
-CMakeDeps
-CMakeToolchain
+cmake
 
 [options]
 openssl/*:shared=True
