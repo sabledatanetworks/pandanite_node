@@ -2,7 +2,7 @@
 nlohmann_json/3.11.2
 openssl/1.1.1w
 leveldb/1.23
-curl/8.2.1
+curl/7.88.1
 
 [generators]
 CMakeDeps
