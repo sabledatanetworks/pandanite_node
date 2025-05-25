@@ -1,46 +1,10 @@
-cmake_minimum_required(VERSION 3.10)
-project(pandanite_node)
-
-# Enable threading
-find_package(Threads REQUIRED)
-
-# Get Git version
-function(get_git_version)
-    find_package(Git QUIET)
-    if(GIT_FOUND)
-        execute_process(
-            COMMAND ${GIT_EXECUTABLE} describe --tags --always --dirty
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            OUTPUT_VARIABLE GIT_VERSION
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-        execute_process(
-            COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            OUTPUT_VARIABLE GIT_COMMIT_HASH
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-        )
-    else()
-        set(GIT_VERSION "unknown")
-        set(GIT_COMMIT_HASH "unknown")
-    endif()
-
-    # Generate version header
-    configure_file(
-        ${CMAKE_SOURCE_DIR}/cmake/version.h.in
-        ${CMAKE_BINARY_DIR}/version.h
-        @ONLY
-    )
-endfunction()
-
-get_git_version()
-
-# Add version.h to include directories
-include_directories(${CMAKE_BINARY_DIR})
+cmake_minimum_required(VERSION 2.8.12)
+project(Pandanite)
 
 # Compiler Flags
 if (WIN32)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
+    set(CONAN_DISABLE_CHECK_COMPILER TRUE)
 else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")    
 endif()
@@ -54,7 +18,6 @@ find_package(nlohmann_json REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(leveldb REQUIRED)
 find_package(CURL REQUIRED)
-find_package(uwebsockets REQUIRED)
 
 # Additional includes
 include_directories(
@@ -62,10 +25,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/core
     ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_SOURCE_DIR}/src/external
-    ${OPENSSL_INCLUDE_DIR}
-    ${LEVELDB_INCLUDE_DIRS}
-    ${CURL_INCLUDE_DIRS}
-    ${UWEBSOCKETS_INCLUDE_DIRS}
+    /usr/local/include/
 )
 
 # Source files
@@ -91,10 +51,8 @@ if (UNIX)
                 OpenSSL::SSL
                 OpenSSL::Crypto
                 leveldb::leveldb
+                /usr/local/Cellar/snappy/1.1.9/lib/libsnappy.a 
                 ${CURL_LIBRARIES}
-                uwebsockets::uwebsockets
-                stdc++fs
-                Threads::Threads
             )
         endforeach()
     endif()
@@ -107,10 +65,10 @@ if (UNIX)
                 OpenSSL::SSL
                 OpenSSL::Crypto
                 leveldb::leveldb
+                -lstdc++fs 
+                -lssl 
+                -lcrypto 
                 ${CURL_LIBRARIES}
-                uwebsockets::uwebsockets
-                stdc++fs
-                Threads::Threads
             )
         endforeach()
     endif()
