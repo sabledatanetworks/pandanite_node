@@ -54,9 +54,19 @@ find_package(nlohmann_json REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(leveldb REQUIRED)
 find_package(CURL REQUIRED)
+find_package(uwebsockets REQUIRED)
 
 # Additional includes
-include_directories(/usr/local/include/)
+include_directories(
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/server
+    ${CMAKE_SOURCE_DIR}/src/external
+    ${OPENSSL_INCLUDE_DIR}
+    ${LEVELDB_INCLUDE_DIRS}
+    ${CURL_INCLUDE_DIRS}
+    ${UWEBSOCKETS_INCLUDE_DIRS}
+)
 
 # Source files
 file(GLOB CORE_SOURCES "src/core/*.cpp")
@@ -82,6 +92,7 @@ if (UNIX)
                 OpenSSL::Crypto
                 leveldb::leveldb
                 ${CURL_LIBRARIES}
+                uwebsockets::uwebsockets
                 stdc++fs
                 Threads::Threads
             )
@@ -97,6 +108,7 @@ if (UNIX)
                 OpenSSL::Crypto
                 leveldb::leveldb
                 ${CURL_LIBRARIES}
+                uwebsockets::uwebsockets
                 stdc++fs
                 Threads::Threads
             )

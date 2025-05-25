@@ -2,6 +2,7 @@
 nlohmann_json/3.11.2
 openssl/1.1.1w
 leveldb/1.23
+uwebsockets/20.30.0
 
 [generators]
 CMakeDeps
@@ -10,6 +11,7 @@ CMakeToolchain
 [options]
 openssl/*:shared=True
 leveldb/*:shared=False
+uwebsockets/*:shared=True
 
 [imports]
 bin, *.dll -> ./bin
