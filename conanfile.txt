@@ -1,6 +1,6 @@
 [requires]
 zlib/1.2.13
-openssl/3.0.0
+openssl/1.1.1w
 uwebsockets/19.3.0
 nlohmann_json/3.11.2
 leveldb/1.23
