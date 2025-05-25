@@ -10,6 +10,7 @@
 #include "../core/transaction.hpp"
 #include "executor.hpp"
 #include "../core/block.hpp"
+#include "../core/common.hpp"
 
 class BlockChain;
 
@@ -24,6 +25,8 @@ public:
     size_t size();
     std::pair<char*, size_t> getRaw() const;
     std::vector<Transaction> getTransactions() const;
+    void removeTransaction(Transaction t);
+    void cleanupExpiredTransactions();
 
 protected:
     void mempool_sync();
@@ -51,4 +54,7 @@ protected:
     
     // Track nonces for each wallet
     std::map<PublicWalletAddress, uint64_t> walletNonces;
+    std::map<SHA256Hash, Transaction> transactions;
+    std::vector<std::thread> cleanupThread;
+    mutable std::mutex lock;
 };

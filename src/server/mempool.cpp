@@ -7,8 +7,11 @@
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
+#include <thread>
+#include <chrono>
 #include "../core/logger.hpp"
 #include "../core/api.hpp"
+#include "../core/helpers.hpp"
 #include "mempool.hpp"
 #include "blockchain.hpp"
 
@@ -23,6 +26,11 @@ MemPool::MemPool(HostManager &h, BlockChain &b) : hosts(h), blockchain(b)
 MemPool::~MemPool()
 {
     shutdown = true;
+    for (auto& thread : cleanupThread) {
+        if (thread.joinable()) {
+            thread.join();
+        }
+    }
 }
 
 void MemPool::mempool_sync() {
@@ -172,11 +180,12 @@ void MemPool::mempool_sync() {
 void MemPool::sync()
 {
     syncThread.push_back(std::thread(&MemPool::mempool_sync, this));
-    // Add cleanup thread
     cleanupThread.push_back(std::thread([this]() {
-        while (true) {
-            cleanupExpiredTransactions();
-            std::this_thread::sleep_for(std::chrono::minutes(1));
+        while (!this->shutdown) {
+            std::this_thread::sleep_for(std::chrono::seconds(60));
+            if (!this->shutdown) {
+                cleanupExpiredTransactions();
+            }
         }
     }));
 }
