@@ -124,8 +124,9 @@ LedgerState Ledger::getState() const {
 
 uint64_t Ledger::getWalletNonce(const PublicWalletAddress& wallet) const {
     std::lock_guard<std::mutex> lockGuard(lock);
-    if (!hasWallet(wallet)) {
+    auto it = nonces.find(wallet);
+    if (it == nonces.end()) {
         return 0;
     }
-    return nonces[wallet];
+    return it->second;
 }
