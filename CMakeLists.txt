@@ -1,9 +1,5 @@
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.15)
 project(Pandanite)
-
-# Load Conan-generated files
-include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 
 # Compiler Flags
 if (WIN32)
@@ -51,6 +47,13 @@ get_git_version()
 # Add version.h to include directories
 include_directories(${CMAKE_BINARY_DIR})
 
+# Find required packages
+find_package(nlohmann_json REQUIRED)
+find_package(OpenSSL REQUIRED)
+find_package(leveldb REQUIRED)
+find_package(CURL REQUIRED)
+find_package(uwebsockets REQUIRED)
+
 # Additional includes
 include_directories(
     ${CMAKE_SOURCE_DIR}/src
@@ -58,7 +61,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_SOURCE_DIR}/src/external
     /usr/local/include/
-    ${CONAN_INCLUDE_DIRS}
 )
 
 # Source files
@@ -80,7 +82,12 @@ if (UNIX)
         # Link libraries for APPLE
         foreach(TARGET tests server cli loader tx miner keygen)
             target_link_libraries(${TARGET} 
-                ${CONAN_LIBS}
+                nlohmann_json::nlohmann_json
+                OpenSSL::SSL
+                OpenSSL::Crypto
+                leveldb::leveldb
+                CURL::libcurl
+                uwebsockets::uwebsockets
             )
         endforeach()
     endif()
@@ -89,7 +96,12 @@ if (UNIX)
         # Link libraries for UNIX
         foreach(TARGET tests server cli loader tx miner keygen)
             target_link_libraries(${TARGET} 
-                ${CONAN_LIBS}
+                nlohmann_json::nlohmann_json
+                OpenSSL::SSL
+                OpenSSL::Crypto
+                leveldb::leveldb
+                CURL::libcurl
+                uwebsockets::uwebsockets
                 -lstdc++fs 
             )
         endforeach()
