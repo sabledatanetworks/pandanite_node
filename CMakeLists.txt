@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10)
 project(pandanite_node)
 
+# Enable threading
+find_package(Threads REQUIRED)
+
 # Get Git version
 function(get_git_version)
     find_package(Git QUIET)
@@ -80,6 +83,7 @@ if (UNIX)
                 leveldb::leveldb
                 ${CURL_LIBRARIES}
                 stdc++fs
+                Threads::Threads
             )
         endforeach()
     endif()
@@ -94,6 +98,7 @@ if (UNIX)
                 leveldb::leveldb
                 ${CURL_LIBRARIES}
                 stdc++fs
+                Threads::Threads
             )
         endforeach()
     endif()
