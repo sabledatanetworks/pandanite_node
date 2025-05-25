@@ -1,5 +1,5 @@
-#include <App.h>
-#include <HttpResponse.h>
+#include <uWS/App.h>
+#include <uWS/HttpResponse.h>
 #include <functional>
 #include <string>
 #include <mutex>

@@ -60,6 +60,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_SOURCE_DIR}/src/external
     /usr/local/include/
+    ${CONAN_INCLUDE_DIRS_UWEBSOCKETS}
 )
 
 # Source files
@@ -87,6 +88,7 @@ if (UNIX)
                 leveldb::leveldb
                 /usr/local/Cellar/snappy/1.1.9/lib/libsnappy.a 
                 ${CURL_LIBRARIES}
+                ${CONAN_LIBS_UWEBSOCKETS}
             )
         endforeach()
     endif()
@@ -103,6 +105,7 @@ if (UNIX)
                 -lssl 
                 -lcrypto 
                 ${CURL_LIBRARIES}
+                ${CONAN_LIBS_UWEBSOCKETS}
             )
         endforeach()
     endif()
