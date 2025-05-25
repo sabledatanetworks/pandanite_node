@@ -15,6 +15,3 @@ leveldb/*:shared=False
 bin, *.dll -> ./bin
 lib, *.dylib* -> ./bin
 lib, *.so* -> ./bin
-
-[system_requires]
-libcurl4-openssl-dev
