@@ -7,12 +7,21 @@
 #include "../core/logger.hpp"
 #include "../core/user.hpp"
 #include "../core/config.hpp"
+#include "../core/constants.hpp"
+#include "../server/blockchain.hpp"
+#include "../server/host_manager.hpp"
 #include <iostream>
 #include <mutex>
 #include <set>
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <string>
+#include <vector>
+#include <csignal>
+#include <cstring>
+#include <curl/curl.h>
+#include <nlohmann/json.hpp>
 using namespace std;
 
 

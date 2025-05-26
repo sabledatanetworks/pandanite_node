@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <cstdint>
 
 // System
 #define DECIMAL_SCALE_FACTOR 10000
@@ -26,4 +28,20 @@
 #define DESIRED_BLOCK_TIME_SEC 90
 #define MIN_DIFFICULTY 6
 #define MAX_DIFFICULTY 255
+
+// Network constants
+#define DEFAULT_PORT 8000
+#define DEFAULT_RPC_PORT 8001
+#define DEFAULT_WS_PORT 8002
+#define DEFAULT_HOST "localhost"
+#define DEFAULT_RPC_HOST "localhost"
+#define DEFAULT_WS_HOST "localhost"
+
+// Blockchain constants
+#define GENESIS_BLOCK_ID 0
+#define PUFFERFISH_START_BLOCK 1  // Pufferfish mining algorithm starts from block 1
+
+// File paths
+#define BLOCKCHAIN_DB_PATH "./data/blockchain"
+#define WALLET_DB_PATH "./data/wallet"
 
