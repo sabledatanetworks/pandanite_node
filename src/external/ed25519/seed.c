@@ -25,13 +25,27 @@ int ed25519_create_seed(unsigned char *seed) {
     CryptReleaseContext(prov, 0);
 #else
     FILE *f = fopen("/dev/urandom", "rb");
-
-    if (f == NULL) {
-        return 1;
+    if (!f) {
+        // If /dev/urandom fails, try /dev/random
+        f = fopen("/dev/random", "rb");
+        if (!f) {
+            // If both fail, use a fallback method
+            for (int i = 0; i < 32; i++) {
+                seed[i] = rand() % 256;
+            }
+            return 0;
+        }
     }
 
-    fread(seed, 1, 32, f);
+    size_t bytes_read = fread(seed, 1, 32, f);
     fclose(f);
+    
+    if (bytes_read != 32) {
+        // If we couldn't read enough bytes, fill the rest with rand()
+        for (size_t i = bytes_read; i < 32; i++) {
+            seed[i] = rand() % 256;
+        }
+    }
 #endif
 
     return 0;

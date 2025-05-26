@@ -9,7 +9,6 @@
 #include "../core/config.hpp"
 #include "../core/constants.hpp"
 #include "../server/blockchain.hpp"
-#include "../server/host_manager.hpp"
 #include <iostream>
 #include <mutex>
 #include <set>

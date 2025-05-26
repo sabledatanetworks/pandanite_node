@@ -512,6 +512,9 @@ void HostManager::refreshHostList() {
 }
 
 void HostManager::syncHeadersWithPeers() {
+    if (this->currPeers.empty()) {
+        return;
+    }
     // free existing peers
     std::unique_lock<std::mutex> ul(lock);
     this->currPeers.empty();
