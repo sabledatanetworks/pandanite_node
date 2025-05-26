@@ -65,6 +65,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_SOURCE_DIR}/src/external
     /usr/local/include/
+    ${uwebsockets_INCLUDE_DIRS}
 )
 
 # Source files

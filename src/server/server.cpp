@@ -1,5 +1,5 @@
-#include <uWS/App.h>
-#include <uWS/HttpResponse.h>
+#include <uwebsockets/App.h>
+#include <uwebsockets/HttpResponse.h>
 #include <functional>
 #include <string>
 #include <mutex>
