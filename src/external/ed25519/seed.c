@@ -7,6 +7,7 @@
 #include <wincrypt.h>
 #else
 #include <stdio.h>
+#include <stdlib.h>  // For rand()
 #endif
 
 int ed25519_create_seed(unsigned char *seed) {

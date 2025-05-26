@@ -517,7 +517,7 @@ void HostManager::syncHeadersWithPeers() {
     }
     // free existing peers
     std::unique_lock<std::mutex> ul(lock);
-    this->currPeers.empty();
+    this->currPeers.clear();
     
     // pick N random peers
     set<string> hosts = this->sampleFreshHosts(RANDOM_GOOD_HOST_COUNT);
