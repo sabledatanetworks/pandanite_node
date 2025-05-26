@@ -8,27 +8,23 @@ Ledger::Ledger() : db(nullptr) {
 }
 
 Ledger::~Ledger() {
-    if (db) {
-        delete db;
-        db = nullptr;
-    }
+    closeDB();
 }
 
 void Ledger::init(const std::string& path) {
     dbPath = path;
     leveldb::Options options;
     options.create_if_missing = true;
-    leveldb::Status status = leveldb::DB::Open(options, path, &db);
+    leveldb::DB* raw_db = nullptr;
+    leveldb::Status status = leveldb::DB::Open(options, path, &raw_db);
     if (!status.ok()) {
         throw std::runtime_error("Failed to open database: " + status.ToString());
     }
+    db.reset(raw_db);
 }
 
 void Ledger::closeDB() {
-    if (db) {
-        delete db;
-        db = nullptr;
-    }
+    db.reset();
 }
 
 void Ledger::deleteDB() {
