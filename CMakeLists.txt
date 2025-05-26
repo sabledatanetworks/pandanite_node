@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 project(Pandanite)
 
 # Set up Conan package search paths
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR})
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_BINARY_DIR}/generators)
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR}/generators)
 
 # Compiler Flags
 if (WIN32)
