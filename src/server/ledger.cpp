@@ -4,8 +4,40 @@
 #include "ledger.hpp"
 using namespace std;
 
+Ledger::Ledger() : db(nullptr) {
+}
 
-Ledger::Ledger() {
+Ledger::~Ledger() {
+    if (db) {
+        delete db;
+        db = nullptr;
+    }
+}
+
+void Ledger::init(const std::string& path) {
+    dbPath = path;
+    leveldb::Options options;
+    options.create_if_missing = true;
+    leveldb::Status status = leveldb::DB::Open(options, path, &db);
+    if (!status.ok()) {
+        throw std::runtime_error("Failed to open database: " + status.ToString());
+    }
+}
+
+void Ledger::closeDB() {
+    if (db) {
+        delete db;
+        db = nullptr;
+    }
+}
+
+void Ledger::deleteDB() {
+    closeDB();
+    leveldb::Options options;
+    leveldb::Status status = leveldb::DestroyDB(dbPath, options);
+    if (!status.ok()) {
+        throw std::runtime_error("Failed to delete database: " + status.ToString());
+    }
 }
 
 leveldb::Slice walletToSlice(const PublicWalletAddress& w) {
@@ -137,8 +169,4 @@ void Ledger::incrementWalletNonce(const PublicWalletAddress& wallet) {
         createWallet(wallet);
     }
     nonces[wallet]++;
-}
-
-Ledger::~Ledger() {
-    closeDB();
 }

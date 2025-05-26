@@ -35,6 +35,7 @@ class Ledger {
         
     protected:
         std::unique_ptr<leveldb::DB> db;
+        std::string dbPath;
         mutable std::mutex ledger_mutex;
         std::map<PublicWalletAddress, TransactionAmount> balances;
         std::map<PublicWalletAddress, uint64_t> nonces;
