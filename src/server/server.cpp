@@ -1,5 +1,5 @@
-#include <uwebsockets/App.h>
-#include <uwebsockets/HttpResponse.h>
+#include <App.h>
+#include <HttpResponse.h>
 #include <functional>
 #include <string>
 #include <mutex>
